@@ -1,5 +1,44 @@
+/*
+    Rui Santos: 2020225542 
+    Tomás Dias: 2020215701
+    
+    Task1:
+        Para esta tarefa usamos uma matriz dp onde as colunas correspondem aos dias e as linhas 
+        correspondem a se compramos ações nesse dia ou não. Para esta tarefa consideramos que compramos
+        e vendemos o máximo de ações que podemos ter em mão.
+        Inicializamos os valores da ultima coluna a 0 e depois percorremos a matriz do fim para o inicio, 
+        começando na coluna d-1, seguindo uma abordagem bottom-up. Para cada dia experimentamos comprar e 
+        vender e vemos qual compensa mais. Para o primeiro caso de teste do enunciado obtemos uma matriz
+        do genero 600 600 600 510 0  onde o valor do profit máximo estará na 2 linha e 1 coluna.
+                  510 450 0 0 0
+    
+    Task2:
+        Para esta tarefa partimos da matriz dp obtida na task 1 e calculamos o caminho da seguinte forma:
+        Começamos da ultima coluna para a primeira e analisamos a linha 1(vendas) e linha 2 (compras)
+        Quando o valor aumenta quer dizer que houve uma venda/compra. Depois temos de garantir que a ordem
+        dos acontecimentos é coerente, ou seja, nao ha 2 compras nem 2 vendas seguidas (porque estamos
+        sempre a comprar e a vender o máximo de ações que podemos ter em mão).
+        O exemplo do enunciado fica então assim: 0 3 0 -3 0
+
+
+    Task3:
+        Para esta tarefa, recorremos ao uso de programacao dinamica, uma vez que 
+        neste problema podemos utilizar problemas de menor estrutura para resolver
+        problemas de estrutura maior(subestrutura otima).
+        A solucao de cada conjunto dia/acoes a comprar depende do dia anterior. 
+        Na matriz stocksbyDay podemos obter o resultado do maximo lucro na primeira linha e ultima coluna.
+        Para calcular os caminhos, temos a matriz paths que nos vai guardando para cada 
+        conjunto dia/acoes os caminhos a percorrer, baseado também aos resultados do dia anterior,
+        onde por exemplo, se no dia anterior temos dois resultados que contribuem para o resultado
+        que queremos, o caminho vai ser a soma dos caminhos associados a esses dois resultados anteriores.
+        Tal como na matriz stocksbyDay, para obter os caminhos com lucro maximo acedemos ao valor
+        da matriz paths na primeira linha e ultima coluna.
+*/
+
+
 #include <iostream>
 #include <vector>
+#include <algorithm>
 
 using namespace std;
 
@@ -19,15 +58,15 @@ long long int valorAmodar=0;
 
 
 
-long long int solveTask12(int linha){
+long long int solveTask1(int linha){
     for(int i = d-1; i>=0; i--){
         for(int j = 0; j<2; j++){
             long long int profit = 0;
           
-            if(j){
-                profit = max(-(k*v[linha][i] + k*r) + dp[0][i+1] ,0 +   dp[1][i+1]);
-            }else{
-                profit = max(k*v[linha][i] + dp[1][i+1] ,0 +   dp[0][i+1]);
+            if(j){ // comprar
+                profit = max(-(k*v[linha][i] + k*r) + dp[0][i+1] ,0 + dp[1][i+1]);
+            }else{ // vender
+                profit = max(k*v[linha][i] + dp[1][i+1] ,0 + dp[0][i+1]);
             }
 
             dp[j][i] = profit;
@@ -82,92 +121,55 @@ void solveTask2(){
     }
 }
     
-/*long long int fact(long long int n) {
-   if (n == 0 || n == 1)
-   return 1;
-   else
-   return n * fact(n - 1);
-}*/
-
-long long int combination(long long int y, long long int x){
-    if (x > y) {
-        return 0;
-    }
-    long long int res = 1;
-    for (int i = 1; i <= x; ++i) {
-        res *= y--;
-        res /= i;
-    }
-    return res;
-}
 
 
+void solveTask3(int linha){
+    //matriz dias numero de acoes e em cada quadrado temos o melhor lucro 
+    vector<vector<int>> stocksbyDay = vector<vector<int>> (k+1, vector<int>(d)); //guarda o lucro
+    vector<vector<int>> paths = vector<vector<int>> (k+1, vector<int>(d,0));
+    vector<int> profit = vector<int> (k+1);   
 
-void solveTask32(int linha){
-    int possibilidadesCompra=0, possibilidadesVenda=0;
-    bool compra=true;
-    bool venda=false;
-
-
-    valorAmodar=0;
-    long long int conta1=0, conta2=0;
-    vector<long long int> valoresCompra = vector<long long int>(d/2,0);
-    vector<long long int> valoresVenda = vector<long long int>(d/2,0);
-    for(int i = 0; i<d; i++){
-        //cout << ordem[i] << " ";
-        if(ordem[i] == k){
-            valoresCompra[conta1]=v[linha][i];
-            conta1++;
-        }
-        if(ordem[i]==-k){
-            valoresVenda[conta2]=v[linha][i];
-            conta2++;
-        }
-    }
-    if(conta1==0 && conta2 == 0){
-        valorAmodar = 0;
+    for(int i = 0; i<k+1; i++){
+        stocksbyDay[i][0] = -(i*(v[linha][0] + r));
+        //cout << v[linha][0] << endl;
+        //cout << stocksbyDay[0][i] << endl;
+        paths[i][0] = 1;
     }
 
-    conta1=0, conta2=0;
-
-
-    for(int j = 0; j<d; j++){
-        //if(valoresCompra[conta1]==0 && valoresVenda[conta2]==0) break;
-        if(compra){
-            if(v[linha][j]==valoresCompra[conta1])possibilidadesCompra++;
-            else if(v[linha][j]==valoresVenda[conta2]){
-                compra=false;
-                venda=true;
-                conta1++;
-            }
-        }
-        if(venda){
-            if(v[linha][j]==valoresVenda[conta2]){possibilidadesVenda++;}
-            if(v[linha][j]==valoresCompra[conta1] || j == d-1){
-                compra=true;
-                venda=false;
-                conta2++;
-                //cout << possibilidadesCompra << " " << possibilidadesVenda << endl;
-                long long int valorAmodaraux=0;
-                valorAmodaraux+=combination(k+possibilidadesCompra-1, possibilidadesCompra-1);
-                valorAmodaraux*=combination(k+possibilidadesVenda-1, possibilidadesVenda-1);
-                possibilidadesVenda=0;
-                possibilidadesCompra=1;
-                if(conta2==1){
-                    valorAmodar=valorAmodaraux;
-                }else valorAmodar *= valorAmodaraux;
+    const int MOD = 1e9+7;
+    for(int i = 1; i<d; i++){
+        for(int j = 0; j<k+1; j++){ //numero de acoes a ficar no dia
+            for(int p = 0; p<k+1; p++){  // percorrer numero de acoes dia anterior
+                if(j==p){
+                    profit[p] = stocksbyDay[p][i-1];
+                }
+                else if(j<p){
+                    profit[p] = stocksbyDay[p][i-1] + v[linha][i] * (p-j);    
+                }else{
+                    profit[p] = stocksbyDay[p][i-1] - (v[linha][i] + r)*(j-p);
+                }
                 
             }
+            int max = -100000;
+            for(int l = 0; l<k+1; l++){
+                if(profit[l]> max) max = profit[l];
+            }
+            int conta = 0;
+            for(int l = 0; l<k+1; l++){
+                if(profit[l]== max){
+                    conta = (conta%MOD + paths[l][i-1]%MOD)%MOD;
+                }
+            }
+            paths[j][i] = conta;
+            stocksbyDay[j][i] = max;
         }
     }
-    //cout << valorAmodar << endl;
+
+    int prof = stocksbyDay[0][d-1];
+    int max_profitable_paths = paths[0][d-1];
+    cout << prof << " " << max_profitable_paths << endl;
 }
 
-
-void solveTask3(){
-    const int MOD = 1e9+7;
-    cout << valorAmodar%MOD << endl;
-}
 
 
 
@@ -190,7 +192,7 @@ int main(){
             dp = vector<vector<long long int>> (2, vector<long long int>(d+1, -1));
             dp[0][d]=0;
             dp[1][d]=0;
-            cout << solveTask12(i) << endl;;
+            cout << solveTask1(i) << endl;;
         }
     }
     
@@ -199,7 +201,7 @@ int main(){
             dp = vector<vector<long long int>> (2, vector<long long int>(d+1, -1));
             dp[0][d]=0;
             dp[1][d]=0;
-            cout << solveTask12(i) << endl;;
+            cout << solveTask1(i) << endl;;
             solveTask2();
             for(int j = 0; j<d; j++){
                 if(comprou){
@@ -215,21 +217,7 @@ int main(){
     }
     if(task==3){
         for(int i = 0; i<n; i++){
-            dp = vector<vector<long long int>> (2, vector<long long int>(d+1, -1));
-            dp[0][d]=0;
-            dp[1][d]=0;
-            cout << solveTask12(i) << " ";
-            solveTask2();
-            for(int j = 0; j<d; j++){
-                if(comprou){
-                    if(ordem[j]==-k){
-                        ordem[j]=0;
-                        comprou=false;
-                    }
-                }
-            }
-            solveTask32(i);
-            solveTask3();
+            solveTask3(i);
         }
     }
     
